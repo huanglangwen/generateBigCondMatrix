@@ -16,9 +16,9 @@ function randMat4(n)
 end
 
 function randMat4_NS(n)
-		A=randMat4(n)
+		A=randMat4(n-1)
 		while abs(mod(det(A),n))<0.1
-				A=randMat4(n)
+				A=randMat4(n-1)
 		end
 		return A
 end
@@ -29,9 +29,9 @@ function randSMat4(n)
 end
 
 function randSMat4_NS(n)
-		A=randSMat4(n)
+		A=randSMat4(n-1)
 		while abs(mod(det(A),n))<0.1
-				A=randSMat4(n)
+				A=randSMat4(n-1)
 		end
 		return A
 end
@@ -51,27 +51,34 @@ function rand01TriMat()::MMatrix
 end
 
 """
-detB^(i+n*j)*detA === 1 (mod p), n in N+
+detB^(j+n*i)*detA === 1 (mod p), n in N+
 """
-function solveModEqn(detA::Int,detB::Int,p::Int)::Int
-
+function solveModEqn(detA::Int,detB::Int,p::Int)
 		i=1
 		j=1
-		while mod(detB^(2*i)*detA,p)!=1
+		pq=mod(mod(detB,p)^2*mod(detA,p),p)
+		q2=mod(mod(detB,p)^2,p)
+		while q2!=1
+				q2=mod(q2*mod(detB,p)^2,p)
 				i+=1
 		end
-		while mod(detB^(2*j),p)!=1
+		while pq!=1
+				pq=mod(pq*mod(detB,p)^2,p)
 				j+=1
+				if j>i
+					j=-1
+					break
+				end
 		end
 		return i,j
 end
 
-function matModExp(A::MMatrix,e::Int,n::Int)
+function matModExp(A::MMatrix,e::Int,n::Int)::MMatrix
 		Aexp=deepcopy(A)
 		for i=1:(e-1)
 				Aexp=mod.(Aexp*A,n)
 		end
-		return Aexp
+		return MMatrix{4,4}(Aexp)
 end
 
 """
@@ -86,9 +93,6 @@ function gensubgroup(N,A::MMatrix,B::MMatrix)
 	#A=MMatrix{4,4}(transpose(h)*h)#[2 7 10 10;7 10 10 9;10 10 10 1;10 9 1 9]
 	#A=randSMat4_NS(11)
 	n=11
-	ii,jj=solveModEqn(Int(det(A)),Int(det(B)),n)
-	A=ModCong!(A,matModExp(B,ii,n),n)
-	B=matModExp(B,jj,n)
 	Aorigin=deepcopy(A)
 	#B=deepcopy(A)
 	max=0.0
@@ -118,30 +122,43 @@ function gensubgroup(N,A::MMatrix,B::MMatrix)
 end
 
 function main(N)
+		n=11
 		max=0.0
 		maxi=0.0
 		maxMat=zeros(Int,4)
 		maxMati=zeros(Int,4)
-		B=zeros(Int,4)
+		maxB=zeros(Int,4)
 		Bi=zeros(Int,4)
-		A=randSMat4_NS(10)
+		A=randSMat4_NS(n)
 		for i=1:N
 				if mod(i,100)==0
-						A=randSMat4_NS(10)
+						A=randSMat4_NS(n)
 				end
 				if i-floor(sqrt(i))^2<1
-						@printf("Current i=%d,max=%f\n",i,max)
+						@printf("Current i=%d/%d,max=%f\n",i,N,max)
 				end
 				#h=rand01TriMat()
-				maxi,maxMati,Bi=gensubgroup(100000,A,randMat4_NS(10))
+				B=randMat4_NS(n)
+				ii,jj=solveModEqn(Int(det(A)),Int(det(B)),n)
+				while ((mod(det(B),n)==1)&(mod(det(A),n)!=1))|(jj==-1)
+					A=randSMat4_NS(n)
+					ii,jj=solveModEqn(Int(det(A)),Int(det(B)),n)
+				end
+				A=ModCong!(A,matModExp(B,jj,n),n)
+				B=matModExp(B,ii,n)
+				#println(A,B)
+				maxi,maxMati,Bi=gensubgroup(100000,A,B)
 				if maxi>max
 						max=maxi
 						maxMat=maxMati
-						B=Bi
+						maxB=Bi
+						if max>70000
+							println(maxMat)
+						end
 				end
 		end
 		println(max)
 		println(maxMat)
-		println(B)
-		@printf("Det(maxMat)=%f,Det(B)=%f,cond(B)=%f\n",det(maxMat),det(B),cond(B))
+		println(maxB)
+		@printf("Det(maxMat)=%f,Det(B)=%f,cond(B)=%f\n",det(maxMat),det(maxB),cond(maxB))
 end
