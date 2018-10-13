@@ -1,8 +1,19 @@
-import LinearAlgebra:cond,reshape,Matrix,UpperTriangular,diag,I,det
+import LinearAlgebra:cond,reshape,Matrix,UpperTriangular,diag,I,det,inv
 import Printf:@printf
 import StaticArrays:SMatrix,MMatrix
 function ModCong!(A::MMatrix{4,4,Int},B::MMatrix{4,4,Int},n::Int)::MMatrix
 	temp=transpose(B)*A*B
+	for i=1:16
+		@inbounds A[i]=mod(temp[i],n)
+	end
+	#return [mod(i,n) for i in transpose(B)*A*B]
+	return A
+end
+"""
+Convergent rate of Conj is slower than Cong
+"""
+function ModConj!(A::MMatrix,B::MMatrix,invB::SMatrix{4,4,Int},n::Int)::MMatrix
+	temp=invB*A*B
 	for i=1:16
 		@inbounds A[i]=mod(temp[i],n)
 	end
@@ -94,10 +105,12 @@ function gensubgroup(N,A::MMatrix,B::MMatrix)
 	#A=randSMat4_NS(11)
 	n=11
 	Aorigin=deepcopy(A)
+	#invB=SMatrix{4,4,Int}(round.(inv(B)))
 	#B=deepcopy(A)
 	max=0.0
 	maxMat=zeros(4)
 	for i=1:N
+		#ModConj!(A,B,invB,n)
 		ModCong!(A,B,n)
 		if abs(det(A))<0.9
 			#print("Singular Matrix i=")
@@ -134,7 +147,7 @@ function main(N)
 				if mod(i,100)==0
 						A=randSMat4_NS(n)
 				end
-				if i-floor(sqrt(i))^2<1
+				if i-floor(sqrt(i))^3<1
 						@printf("Current i=%d/%d,max=%f\n",i,N,max)
 				end
 				#h=rand01TriMat()
@@ -144,9 +157,10 @@ function main(N)
 					A=randSMat4_NS(n)
 					ii,jj=solveModEqn(Int(det(A)),Int(det(B)),n)
 				end
+				#println(mod(det(A),n),", ",mod(det(B),n))
 				A=ModCong!(A,matModExp(B,jj,n),n)
-				B=matModExp(B,ii,n)
-				#println(A,B)
+				B=matModExp(B,2*ii,n)
+				#println(mod(det(A),n),", ",mod(det(B),n),"////")
 				maxi,maxMati,Bi=gensubgroup(100000,A,B)
 				if maxi>max
 						max=maxi
