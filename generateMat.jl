@@ -147,7 +147,7 @@ function main(N)
 				if mod(i,100)==0
 						A=randSMat4_NS(n)
 				end
-				if i-floor(i^(1/3))^3<1
+				if i-floor(i^(1/2))^2<1
 						@printf("Current i=%d/%d,max=%f\n",i,N,max)
 				end
 				#h=rand01TriMat()
