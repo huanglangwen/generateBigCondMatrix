@@ -143,13 +143,14 @@ function main(N)
 		maxB=zeros(Int,4)
 		Bi=zeros(Int,4)
 		A=randSMat4_NS(n)
+		f=open("logBigCond.txt","a")
 		for i=1:N
 				if mod(i,100)==0
 						A=randSMat4_NS(n)
 				end
-				if i-floor(i^(1/2))^2<1
-						@printf("Current i=%d/%d,max=%f\n",i,N,max)
-				end
+				#if i-floor(i^(1/2))^2<1
+				#		@printf("Current i=%d/%d,max=%f\n",i,N,max)
+				#end
 				#h=rand01TriMat()
 				B=randMat4_NS(n)
 				ii,jj=solveModEqn(Int(det(A)),Int(det(B)),n)
@@ -168,9 +169,12 @@ function main(N)
 						maxB=Bi
 						if max>70000
 							println(maxMat)
+							@printf(f,"%s %f %s\n",maxMat,max,maxB)
+							flush(f)
 						end
 				end
 		end
+		close(f)
 		println(max)
 		println(maxMat)
 		println(maxB)
