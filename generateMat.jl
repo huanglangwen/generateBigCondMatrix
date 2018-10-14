@@ -168,8 +168,8 @@ function main(N)
 						maxMat=maxMati
 						maxB=Bi
 						if max>70000
-							println(maxMat)
-							@printf(f,"%s %f %s\n",maxMat,max,maxB)
+							@printf("i=%d/%d,\n%s %f\n %s\n",i,N,maxMat,max,maxB)
+							@printf(f,"%d %s %f %s\n",i,maxMat,max,maxB)
 							flush(f)
 						end
 				end
