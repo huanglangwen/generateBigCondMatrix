@@ -201,7 +201,7 @@ function genBigCond(N)
         if maxi>max
             max=maxi
             maxMat=maxMati
-            if max>0
+            if max>60000
                 @printf("i=%d/%d,\n%s %f,det(A)=%f\n",i,N,maxMat,max,det(maxMat))
                 @printf(f,"%d %s %f\n",i,maxMat,max)
                 flush(f)
