@@ -79,11 +79,11 @@ function solveModEqn(detA::Int,detB::Int,p::Int)
     moddetB2=mod(mod(detB,p)^2,p)
 		pq=mod(moddetB2*moddetA,p)
 		q2=moddetB2
-		while q2!=1
+		while (q2!=1)&(q2!=mod(-1,p))
 				q2=mod(q2*moddetB2,p)
 				i+=1
 		end
-		while pq!=1
+		while (pq!=1)&(pq!=mod(-1,p))
 				pq=mod(pq*moddetB2,p)
 				j+=1
 				if j>i
@@ -94,13 +94,13 @@ function solveModEqn(detA::Int,detB::Int,p::Int)
 		return i,j
 end
 """
-detA^i == 1 (mod p)
+detA^i == +-1 (mod p)
 """
 function solveModEqn(detA::Int,p::Int)
     i=1
     moddetA=mod(detA,p)
     detAn=moddetA
-    while detAn!=1
+    while (detAn!=1)&(detAn!=-1)
         detAn=mod(detAn*moddetA,p)
         i+=1
     end
@@ -202,7 +202,7 @@ function genBigCond(N)
             max=maxi
             maxMat=maxMati
             if max>0
-                @printf("i=%d/%d,\n%s %f\n\n",i,N,maxMat,max)
+                @printf("i=%d/%d,\n%s %f,det(A)=%f\n",i,N,maxMat,max,det(maxMat))
                 @printf(f,"%d %s %f\n",i,maxMat,max)
                 flush(f)
             end
