@@ -12,13 +12,21 @@ end
 """
 Convergent rate of Conj is slower than Cong
 """
-function ModConj!(A::MMatrix,B::MMatrix,invB::SMatrix{4,4,Int},n::Int)::MMatrix
+function ModConj!(A::MMatrix{4,4,Int},B::MMatrix{4,4,Int},invB::SMatrix{4,4,Int},n::Int)::MMatrix
 	temp=invB*A*B
 	for i=1:16
 		@inbounds A[i]=mod(temp[i],n)
 	end
 	#return [mod(i,n) for i in transpose(B)*A*B]
 	return A
+end
+
+function ModMult!(A::MMatrix{4,4,Int},B::MMatrix{4,4,Int},n::Int)::MMatrix
+    temp=A*B
+    for i=1:16
+        @inbounds A[i]=mod(temp[i],n)
+    end
+    return A
 end
 
 #function naiiveMatIter()
@@ -67,14 +75,16 @@ detB^(j+n*i)*detA === 1 (mod p), n in N+
 function solveModEqn(detA::Int,detB::Int,p::Int)
 		i=1
 		j=1
-		pq=mod(mod(detB,p)^2*mod(detA,p),p)
-		q2=mod(mod(detB,p)^2,p)
+    moddetA=mod(detA,p)
+    moddetB2=mod(mod(detB,p)^2,p)
+		pq=mod(moddetB2*moddetA,p)
+		q2=moddetB2
 		while q2!=1
-				q2=mod(q2*mod(detB,p)^2,p)
+				q2=mod(q2*moddetB2,p)
 				i+=1
 		end
 		while pq!=1
-				pq=mod(pq*mod(detB,p)^2,p)
+				pq=mod(pq*moddetB2,p)
 				j+=1
 				if j>i
 					j=-1
@@ -83,11 +93,25 @@ function solveModEqn(detA::Int,detB::Int,p::Int)
 		end
 		return i,j
 end
+"""
+detA^i == 1 (mod p)
+"""
+function solveModEqn(detA::Int,p::Int)
+    i=1
+    moddetA=mod(detA,p)
+    detAn=moddetA
+    while detAn!=1
+        detAn=mod(detAn*moddetA,p)
+        i+=1
+    end
+    return i
+end
+
 
 function matModExp(A::MMatrix,e::Int,n::Int)::MMatrix
 		Aexp=deepcopy(A)
 		for i=1:(e-1)
-				Aexp=mod.(Aexp*A,n)
+				ModMult!(Aexp,A,n)
 		end
 		return MMatrix{4,4}(Aexp)
 end
@@ -103,22 +127,23 @@ function gensubgroup(N,A::MMatrix,B::MMatrix)
 	#B=[1 3 10 10;3 4 8 9;10 8 3 9;10 9 9 3]
 	#A=MMatrix{4,4}(transpose(h)*h)#[2 7 10 10;7 10 10 9;10 10 10 1;10 9 1 9]
 	#A=randSMat4_NS(11)
+  #@assert (Int(mod(det(A),11))==1) & (Int(mod(det(A),11))==1)
 	n=11
 	Aorigin=deepcopy(A)
 	#invB=SMatrix{4,4,Int}(round.(inv(B)))
-	#B=deepcopy(A)
 	max=0.0
 	maxMat=zeros(4)
 	for i=1:N
 		#ModConj!(A,B,invB,n)
 		ModCong!(A,B,n)
-		if abs(det(A))<0.9
+		#if abs(det(A))<0.9
 			#print("Singular Matrix i=")
 			#println(i)
-			break
-		end
-		if cond(A)>max
-			max=cond(A)
+		#	break
+		#end
+    condA=cond(A)
+		if condA>max
+			max=condA
 			#println(A)
 			maxMat=deepcopy(A)
 		end
@@ -128,13 +153,69 @@ function gensubgroup(N,A::MMatrix,B::MMatrix)
 			break
 		end
 	end
-	#println(max)
-	#println(maxMat)
-	#println(B)
   return max,maxMat,B
 end
+"""
+det(A)===1 (mod 11)
+A->A*A
+"""
+function gensubgroup(N,A::MMatrix)
+    #@assert Int(mod(det(A),11))==1
+    n=11
+    Aorigin=deepcopy(A)
+    max=0.0
+    maxMat=zeros(MMatrix{4,4,Int})
+    for i=1:N
+        ModMult!(A,Aorigin,n)
+        condA=cond(A)
+        if condA>max
+            max=condA
+            maxMat=deepcopy(A)
+        end
+        if A==Aorigin
+            #@printf("Cycled i=%d\n",i)
+            break
+        end
+    end
+    return max,maxMat
+end
 
-function main(N)
+
+"""
+Finding 4x4 Matrix with elements of 0-10 that have big condition number
+"""
+function genBigCond(N)
+    n=11
+    max=0.0
+    maxi=0.0
+    maxMat=zeros(MMatrix{4,4,Int})
+    maxMati=zeros(MMatrix{4,4,Int})
+    maxB=zeros(MMatrix{4,4,Int})
+    Bi=zeros(MMatrix{4,4,Int})
+		f=open("logBigCond_NonS.txt","a")
+    for i=1:N
+        A=randMat4_NS(n)
+        ii=solveModEqn(Int(det(A)),11)
+        A=matModExp(A,ii,n)
+        maxi,maxMati=gensubgroup(100000,A)
+        if maxi>max
+            max=maxi
+            maxMat=maxMati
+            if max>0
+                @printf("i=%d/%d,\n%s %f\n\n",i,N,maxMat,max)
+                @printf(f,"%d %s %f\n",i,maxMat,max)
+                flush(f)
+            end
+        end
+    end
+    close(f)
+    @printf("det(maxMat)=%f",det(maxMat))
+end
+
+"""
+Finding *Symmetric* 4x4 Matrix with elements of 0-10 that have big condition number
+"""
+function genBigCondS(N)
 		n=11
 		max=0.0
 		maxi=0.0
