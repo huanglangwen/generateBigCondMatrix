@@ -5,7 +5,7 @@ function main()
     A=zeros(MMatrix{4,4,Int8})
     max=0.0
     maxMat=deepcopy(A)
-    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1],[9,3,3,3,1,1,3,3,3,3],10)
+    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1],[5,3,3,3,2,2,3,3,3,4],10)
         A[1,1]=a[1]
         A[2,1]=a[2]
         A[3,1]=a[3]
