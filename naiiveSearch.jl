@@ -5,7 +5,7 @@ function searchMatrix()
     A=zeros(MMatrix{4,4,Int8})
     max=0.0
     maxMat=deepcopy(A)
-    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1,0],[10,8,6,4,4,4,4,4,6,6,6],16)
+    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1],[10,8,6,4,4,4,4,4,6,6],16)
         for i=1:16
             @inbounds A[i]=a[i]
         end
@@ -25,7 +25,7 @@ function searchSymmetryMatrix()
     A=zeros(MMatrix{4,4,Int8})
     max=0.0
     maxMat=deepcopy(A)
-    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1,0],[5,4,3,2,2,2,2,2,3,3,3],10)
+    for a in multiset_permutations([10,9,8,7,6,5,4,3,2,1],[5,4,3,2,2,2,2,2,3,3],10)
         A[1,1]=a[1]
         A[2,1]=a[2]
         A[3,1]=a[3]
